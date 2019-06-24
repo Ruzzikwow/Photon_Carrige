@@ -76,10 +76,10 @@ extern CAN_HandleTypeDef hcan1;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim8;
-extern uint8_t DevState;					//0x01 UP
-																	//0x02 DOWN
-																	//0x04 LEFT
-																	//0x08 RIGHT
+extern uint8_t DevState;					//0x40 UP
+																	//0x80 DOWN
+																	//0x10 LEFT
+																	//0x20 RIGHT
 																	
 extern int MOTOR_1_Step;
 
@@ -242,11 +242,11 @@ void EXTI2_IRQHandler(void)
 		
 	if(HAL_GPIO_ReadPin(SW_UP_GPIO_Port,SW_UP_Pin)==GPIO_PIN_SET)
 	{
-		DevState|=0x01;
+		DevState|=0x40;
 	}
 	else
 	{
-		DevState&=(~0x01);
+		DevState&=(~0x40);
 	}
   /* USER CODE BEGIN EXTI2_IRQn 1 */
 
@@ -267,11 +267,11 @@ void EXTI3_IRQHandler(void)
 		
 	if(HAL_GPIO_ReadPin(SW_DOWN_GPIO_Port,SW_DOWN_Pin)==GPIO_PIN_SET)
 	{
-		DevState|=0x02;
+		DevState|=0x80;
 	}
 	else
 	{
-		DevState&=(~0x02);
+		DevState&=(~0x80);
 	}
   /* USER CODE BEGIN EXTI3_IRQn 1 */
 
@@ -284,12 +284,7 @@ void EXTI3_IRQHandler(void)
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
-		if (HAL_CAN_Receive_IT(&hcan1, CAN_FIFO0) != HAL_OK)
-  {
-		Error_Handler();
-  }
-	
-	CAN_RECIEVE_FLAG=1;
+
   /* USER CODE END CAN1_RX0_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
@@ -392,20 +387,20 @@ void EXTI15_10_IRQHandler(void)
 		
 			if(HAL_GPIO_ReadPin(SW_LEFT_GPIO_Port,SW_LEFT_Pin)==GPIO_PIN_SET)
 	{
-		DevState|=0x04;
+		DevState|=0x10;
 	}
 	else
 	{
-		DevState&=(~0x04);
+		DevState&=(~0x10);
 	}
 	
 		if(HAL_GPIO_ReadPin(SW_RIGHT_GPIO_Port,SW_RIGHT_Pin)==GPIO_PIN_SET)
 	{
-		DevState|=0x08;
+		DevState|=0x20;
 	}
 	else
 	{
-		DevState&=(~0x08);
+		DevState&=(~0x20);
 	}
   /* USER CODE END EXTI15_10_IRQn 1 */
 }

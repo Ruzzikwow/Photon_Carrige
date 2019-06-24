@@ -119,7 +119,9 @@ void Error_Handler(void);
 #define KBRD_DOWN				0x33
 #define KBRD_LIGHT			0x31
 #define KBRD_LASER			0x32
-									
+
+#define UI_BOARD		0x00810003
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

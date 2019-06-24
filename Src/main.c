@@ -72,15 +72,29 @@ extern uint8_t DevState;									//0x01 UP
 																					//0x02 DOWN
 																					//0x04 LEFT
 																					//0x08 RIGHT
+	_Bool Motor1_Need_Clbr;
+	_Bool Motor2_Need_Clbr;
   _Bool MOTOR_1_CALIBRATION;
   _Bool MOTOR_2_CALIBRATION;
 	
 	_Bool Light_cnt;
 	_Bool Lazer_cnt;
 	
+	 _Bool Mtr_UP;
+	 _Bool Mtr_DOWN;
+	 _Bool Mtr_LEFT;
+	 _Bool Mtr_RIGHT;
+	 
+	 _Bool UP_flag;
+	 _Bool DOWN_flag;
+	 _Bool LEFT_flag;
+	 _Bool RIGHT_flag;
 	uint8_t CAN_RECIEVE_FLAG;
 CanTxMsgTypeDef        TxMessage;
 CanRxMsgTypeDef        RxMessage;
+
+uint8_t Hand_Controll_1;
+uint8_t Hand_Controll_2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -173,20 +187,14 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
 	MOTOR_Enable(MOTOR_2,DISABLE);
 
-	if(Motor_step(MOTOR_2,0x000000FF,1))
-	{
-		if(Motor_step(MOTOR_2,0x000000FF,-1))
-		{
-				if(Motor_Calibration(MOTOR_1))
-			{
-				LIGHT_ON;
-				if(Motor_Calibration(MOTOR_2))
-				{
-					LAZER_ON;
-				}
-			}
-		}
-	}
+
+	Motor1_Need_Clbr=0;
+	Motor2_Need_Clbr=0;
+	Mtr_UP=1;
+	Mtr_DOWN=1;
+	Mtr_LEFT=1;
+	Mtr_RIGHT=1;
+
 	
 
 
@@ -197,103 +205,154 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		
+		
+			if(Motor_Get_ENABLE(MOTOR_1))
+	{
+		
+		switch(Motor_Get_Dir(MOTOR_1))
+		{
+			case UP:
+				DevState|=0x04;
+				DevState&=(~0x08);
+				break;
+			case DOWN:
+				DevState|=0x08;
+				DevState&=(~0x04);
+				break;
+			case LEFT:
+				break;
+			case RIGHT:
+				break;
+		}
+	}
+		else
+	{
+		DevState&=(~0x04);
+		DevState&=(~0x08);
+	}
+	
+		if(Motor_Get_ENABLE(MOTOR_2))
+	{
+		
+		switch(Motor_Get_Dir(MOTOR_2))
+		{
+			case UP:
+				break;
+			case DOWN:
+				break;
+			case LEFT:
+				DevState|=0x01;
+				DevState&=(~0x02);
+				break;
+			case RIGHT:
+				DevState|=0x02;
+				DevState&=(~0x01);
+				break;
+		}
+	}
+	else
+	{
+		DevState&=(~0x01);
+		DevState&=(~0x02);
+	}
+	
 	
 			if(CAN_RECIEVE_FLAG)
 			{
 				CAN_RECIEVE_FLAG=0;
 				
-				switch((RxMessage.ExtId)&0xFFFF0000)
+				if(RxMessage.DLC>0)
 				{
-					case UI_BOARD:
-						if((RxMessage.DLC!=0)&&(RxMessage.Data[1] == 0x00))  //кнопка нажата
+					if (RxMessage.ExtId == UI_BOARD)
+					{
+						if(RxMessage.Data[1]==0x00)
 						{
-							switch(RxMessage.Data[2])
+							switch (RxMessage.Data[2])
 							{
-								case KBRD_LEFT:
-									if(Motor_to_Switch(MOTOR_2, LEFT))
-									{
-										//тут ответ в кан
-									}
-									break;
-								case KBRD_RIGHT:
-									if(Motor_to_Switch(MOTOR_2,RIGHT))
-									{
-										//awnser
-									}
-									break;
-								case KBRD_UP:
-									if(Motor_to_Switch(MOTOR_1,UP))
-									{
-										//awnser
-									}
-									break;
-								case KBRD_DOWN:
-									if(Motor_to_Switch(MOTOR_1,DOWN))
-									{
-										//awnser
-									}
+								case KBRD_LASER:
+										Lazer_cnt^=1;
+										if(Lazer_cnt)
+										{
+											LAZER_ON;
+										}
+										else
+										{
+											LAZER_OFF;
+										}
 									break;
 								case KBRD_LIGHT:
 									
-									Light_cnt^=1;
-									
-									if(Light_cnt)
-									{
-										LIGHT_ON;
-									}
-									else
-									{
-										LIGHT_OFF;
-									}
+										Light_cnt^=1;
+										if(Light_cnt)
+										{
+											LIGHT_ON;
+										}
+										else
+										{
+											LIGHT_OFF;
+										}
 									break;
-								case KBRD_LASER:
-									
-									Lazer_cnt^=1;
-									
-									if(Lazer_cnt)
-									{
-										LIGHT_ON;
-									}
-									else
-									{
-										LIGHT_OFF;
-									}
-									break;
-							}
-						}
-						else if((RxMessage.DLC!=0)&&(RxMessage.Data[1] == 0x10))
-						{
-							case KBRD_LEFT:
-									MOTOR_Enable(MOTOR_2, DISABLE);
-									
-										//тут ответ в кан
-									
-									break;
-								case KBRD_RIGHT:
-									MOTOR_Enable (MOTOR_2,DISABLE);
-								
-										//awnser
-								
-									break;
+										
 								case KBRD_UP:
-									MOTOR_Enable(MOTOR_1,DISABLE);;
 									
-										//awnser
-									
+										UP_flag=1;
+										DOWN_flag=0;
+										Hand_Controll_1++;
 									break;
 								case KBRD_DOWN:
-									MOTOR_Enable(MOTOR_1,DISABLE);
+										UP_flag=0;
+										DOWN_flag=1;
+										Hand_Controll_1++;
+									break;
+								
+								case KBRD_LEFT:
 									
-										//awnser
+										LEFT_flag=1;
+										RIGHT_flag=0;
+										Hand_Controll_2++;
+								
+									break;
+								case KBRD_RIGHT:
+									
+										RIGHT_flag=1;
+										LEFT_flag=0;
+										Hand_Controll_2++;
+									break;
+							}							
+						}
+						else if(RxMessage.Data[1]==0x10)
+						{
+							switch (RxMessage.Data[2])
+							{
+								case KBRD_UP:
+									
+										UP_flag=0;
+										
+								
+									break;
+								case KBRD_DOWN:
+								
+										DOWN_flag=0;
+										
+									break;
+								
+								case KBRD_LEFT:
+									
+										LEFT_flag=0;
+										
+								
+									break;
+								case KBRD_RIGHT:
+									
+										RIGHT_flag=0;
 									
 									break;
+							}								
 						}
-						break;
-					
+					}
 				}
 			}
-
-		
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -362,48 +421,113 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	
 	if(htim->Instance == TIM3)
 	{
+		if(Motor1_Need_Clbr)
+		{
+
+			if(Motor_Calibration(MOTOR_1))
+			{
+				Motor1_Need_Clbr=0;
+				LIGHT_ON;
+			}
+		}	
 		if(!MOTOR_1_CALIBRATION)
 		{
 				if(Motor_Get_ENABLE(MOTOR_1)==ENABLE)
 				{
 					if(Motor_Get_Dir(MOTOR_1)==UP)
 					{
-						if((DevState&0x01)==0x01)
+						if((DevState&0x40)==0x40)
 						{
 							MOTOR_Enable(MOTOR_1,DISABLE);
 							
 						}
 		
 					}
-					else if((DevState&0x02)==0x02)
+					else if((DevState&0x80)==0x80)
 					{
 						MOTOR_Enable(MOTOR_1,DISABLE);
 					}
 					
+				}
+				
+				
+				if(Hand_Controll_1)
+				{
+					if(UP_flag)
+					{
+						if(Motor_to_Switch(MOTOR_1, UP, 30))
+						{
+							UP_flag=0;
+						}
+					}
+					else if(DOWN_flag)
+					{
+						if(Motor_to_Switch(MOTOR_1, DOWN, 30))
+						{
+							DOWN_flag=0;
+						}
+					}
+					else
+					{
+						MOTOR_Enable(MOTOR_1, DISABLE);
+						Hand_Controll_1--;
+					}
 				}
 		}
 	}
 	
 	if(htim->Instance == TIM8)
 	{
+		if(Motor2_Need_Clbr)
+		{
+			if(Motor_Calibration(MOTOR_2))
+					{
+						LAZER_ON;
+					}
+		}	
 		if(!MOTOR_2_CALIBRATION)
 		{
 				if(Motor_Get_ENABLE(MOTOR_2)==ENABLE)
 				{
 					if(Motor_Get_Dir(MOTOR_2)==LEFT)
 					{
-						if((DevState&0x04)==0x04)
+						if((DevState&0x10)==0x10)
 						{
 							MOTOR_Enable(MOTOR_2,DISABLE);
 							
 						}
 		
 					}
-					else if((DevState&0x08)==0x08)
+					else if((DevState&0x20)==0x20)
 					{
 						MOTOR_Enable(MOTOR_2,DISABLE);
 					}
 					
+				}
+				
+
+				if(Hand_Controll_2)
+				{
+					if(LEFT_flag)
+					{
+						if(Motor_to_Switch(MOTOR_2, LEFT, 30))
+						{
+							LEFT_flag=0;
+						}
+						
+					}
+					else if(RIGHT_flag)
+					{
+						if(Motor_to_Switch(MOTOR_2, RIGHT, 30))
+						{
+							RIGHT_flag=0;
+						}
+					}
+					else
+					{
+						MOTOR_Enable(MOTOR_2, DISABLE);
+						Hand_Controll_2--;
+					}
 				}
 		}
 	}

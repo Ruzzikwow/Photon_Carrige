@@ -175,7 +175,7 @@ void CAN_TRANSMIT(uint32_t ID, uint8_t size, uint8_t Data[size])
 
 }
 
-/*	void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef *hcan)
+	void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef *hcan)
 {
 	
 	if (HAL_CAN_Receive_IT(&hcan1, CAN_FIFO0) != HAL_OK)
@@ -186,7 +186,7 @@ void CAN_TRANSMIT(uint32_t ID, uint8_t size, uint8_t Data[size])
 	CAN_RECIEVE_FLAG=1;
 	
 }
-*/
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -14,6 +14,11 @@ int MOTOR_2_Step_Transmition	= 0x00002FFF;
  _Bool MOTOR_1_STEP_ERROR;
  _Bool MOTOR_2_STEP_ERROR;
  
+ 	extern _Bool Mtr_UP;
+	extern _Bool Mtr_DOWN;
+	extern _Bool Mtr_LEFT;
+	extern _Bool Mtr_RIGHT;
+ 
  extern _Bool MOTOR_1_CALIBRATION;
  extern _Bool MOTOR_2_CALIBRATION;
  
@@ -130,39 +135,58 @@ void Motor_Speed (motor_num motor,uint8_t percent)
 
 _Bool Motor_Calibration (motor_num motor)
 {
-	
+
 	switch (motor)
 	{
 		case MOTOR_1:
 				
 				MOTOR_1_CALIBRATION=1;
 				MOTOR_1_Step = 0;
-				if(Motor_to_Switch(motor,UP))
+		
+				if(Mtr_UP)
 				{
-						if(Motor_to_Switch(motor,DOWN))
-						{
-							MOTOR_1_CALIBRATION=0;
-							MOTOR_1_STEP_ERROR=0;	
-							return 1;
-						}
-						else {return 0;}
+					if(Motor_to_Switch(motor,UP,100))
+					{
+						Mtr_UP=0;
+					}
+				}
 
+				else if(Mtr_DOWN)
+				{
+					if(Motor_to_Switch(motor,DOWN,100))
+					{
+						Mtr_DOWN=0;
+						MOTOR_1_CALIBRATION=0;
+						MOTOR_1_STEP_ERROR=0;	
+						return 1;
+					}
+					else {return 0;}
 				}
 				else {return 0;}
 
 		case MOTOR_2:
 			MOTOR_2_Step = 0;
 			MOTOR_2_CALIBRATION=1;
-			if(Motor_to_Switch(motor,LEFT))
+		
+		
+				if(Mtr_LEFT)
 				{
-						if(Motor_to_Switch(motor,RIGHT))
-						{
-							MOTOR_2_CALIBRATION=0;
-							MOTOR_2_STEP_ERROR=0;			
-							return 1;
-						}
-						else {return 0;}
+					if(Motor_to_Switch(motor,LEFT,100))
+					{
+						Mtr_LEFT=0;
+					}
+				}
 
+				else if(Mtr_RIGHT)
+				{
+					if(Motor_to_Switch(motor,RIGHT,100))
+					{
+						Mtr_RIGHT=0;
+						MOTOR_2_CALIBRATION=0;
+						MOTOR_2_STEP_ERROR=0;	
+						return 1;
+					}
+					else {return 0;}
 				}
 				else {return 0;}
 
@@ -170,10 +194,10 @@ _Bool Motor_Calibration (motor_num motor)
 	return 0;
 }
 
-_Bool Motor_to_Switch (motor_num motor, motor_direction dir)
+_Bool Motor_to_Switch (motor_num motor, motor_direction dir, int speed)
 {
 	
-	Motor_Speed(motor,100);
+	Motor_Speed(motor,speed);
 	if(MOTOR_Direction(motor,dir))
 	{
 		switch (motor)
@@ -183,28 +207,21 @@ _Bool Motor_to_Switch (motor_num motor, motor_direction dir)
 				{
 					case UP:
 						MOTOR_Enable(motor,ENABLE);
-						while((DevState&0x01)!=0x01) 
+						if((DevState&0x40)==0x40) 
 						{
-								if(Motor_Get_ENABLE(MOTOR_1)==DISABLE)
-							{
-							
-							}
+							MOTOR_Enable(motor,DISABLE);
+							return 1;
 						}
-						MOTOR_Enable(motor,DISABLE);
-						return 1;
-					
+
 					case DOWN:
 						
 						MOTOR_Enable(motor,ENABLE);
-						while((DevState&0x02)!=0x02)
+						if((DevState&0x80)==0x80)
 							{
-								if(Motor_Get_ENABLE(MOTOR_1)==DISABLE)
-								{
-									
-								}
+										MOTOR_Enable(motor,DISABLE);
+										return 1;
 							}
-						MOTOR_Enable(motor,DISABLE);
-						return 1;
+			
 					
 						
 					case LEFT:
@@ -221,27 +238,21 @@ _Bool Motor_to_Switch (motor_num motor, motor_direction dir)
 				{
 					case LEFT:
 						MOTOR_Enable(motor,ENABLE);
-						while((DevState&0x04)!=0x04)
+						if((DevState&0x10)==0x10)
 						{
-							if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
-							{
-							
-							}
+								MOTOR_Enable(motor,DISABLE);
+								return 1;
 						}
-						MOTOR_Enable(motor,DISABLE);
-						return 1;
+						
 					
 					case RIGHT:
 						MOTOR_Enable(motor,ENABLE);
-						while((DevState&0x08)!=0x08)
+						if((DevState&0x20)==0x20)
 						{
-							if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
-							{
-							
-							}
+								MOTOR_Enable(motor,DISABLE);
+								return 1;
 						}
-						MOTOR_Enable(motor,DISABLE);
-						return 1;
+					
 					
 						
 					case UP:
@@ -440,7 +451,7 @@ _Bool Motor_step (motor_num motor,uint32_t step,int sign)
 				}
 			}
 			
-			break;
+
 			
 		case MOTOR_2:
 			
@@ -558,7 +569,8 @@ _Bool Motor_step (motor_num motor,uint32_t step,int sign)
 				}
 			}
 		
-			break;
+		
 			
 	}
+	return 0;
 }
