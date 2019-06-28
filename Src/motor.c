@@ -1,12 +1,12 @@
 #include "motor.h"
 #include "tim.h"
-
+#include "flash.h"
  uint8_t DevState;												//0x01 UP
 																					//0x02 DOWN
 																					//0x04 LEFT
 																					//0x08 RIGHT
-int MOTOR_1_Step_Transmition	= 0x00002FFF;
-int MOTOR_2_Step_Transmition	= 0x00002FFF;
+int MOTOR_1_Step_Transmition	= 10000;
+int MOTOR_2_Step_Transmition	= 10000;
  int MOTOR_1_Step;
 
  int MOTOR_2_Step;
@@ -22,7 +22,24 @@ int MOTOR_2_Step_Transmition	= 0x00002FFF;
  extern _Bool MOTOR_1_CALIBRATION;
  extern _Bool MOTOR_2_CALIBRATION;
  
- uint32_t temp_steps;
+ extern int Min_line;
+ extern int Max_line;
+ extern int Max_step;
+ int line_mesure;
+ float line_to_step_k;
+ 
+ int temp_steps;
+ int temp_steps_togo;
+ int temp_steps_2;
+ int temp_steps_togo_2;
+  _Bool first_time_step_1;
+  _Bool first_time_step_2;
+	
+	int i=0;
+	int old_stp=0;
+	
+	int i_2=0;
+	int old_stp_2=0;
 
 void MOTOR_ToggleDir(motor_num motor)
 {
@@ -141,13 +158,15 @@ _Bool Motor_Calibration (motor_num motor)
 		case MOTOR_1:
 				
 				MOTOR_1_CALIBRATION=1;
-				MOTOR_1_Step = 0;
+				
 		
 				if(Mtr_UP)
 				{
 					if(Motor_to_Switch(motor,UP,100))
 					{
+						
 						Mtr_UP=0;
+						MOTOR_1_Step = 0;
 					}
 				}
 
@@ -155,6 +174,8 @@ _Bool Motor_Calibration (motor_num motor)
 				{
 					if(Motor_to_Switch(motor,DOWN,100))
 					{
+						Max_step = MOTOR_1_Step;
+						
 						Mtr_DOWN=0;
 						MOTOR_1_CALIBRATION=0;
 						MOTOR_1_STEP_ERROR=0;	
@@ -165,7 +186,7 @@ _Bool Motor_Calibration (motor_num motor)
 				else {return 0;}
 
 		case MOTOR_2:
-			MOTOR_2_Step = 0;
+			
 			MOTOR_2_CALIBRATION=1;
 		
 		
@@ -173,7 +194,10 @@ _Bool Motor_Calibration (motor_num motor)
 				{
 					if(Motor_to_Switch(motor,LEFT,100))
 					{
+						Min_line = line_mesure;
+						
 						Mtr_LEFT=0;
+						MOTOR_2_Step = 0;
 					}
 				}
 
@@ -181,6 +205,9 @@ _Bool Motor_Calibration (motor_num motor)
 				{
 					if(Motor_to_Switch(motor,RIGHT,100))
 					{
+						Max_line = line_mesure;
+						line_to_step_k = MOTOR_2_Step/(Max_line - Min_line);
+
 						Mtr_RIGHT=0;
 						MOTOR_2_CALIBRATION=0;
 						MOTOR_2_STEP_ERROR=0;	
@@ -340,232 +367,266 @@ _Bool Motor_step (motor_num motor,uint32_t step,int sign)
 			switch (motor)
 	{
 		case MOTOR_1:
-			
-			temp_steps = MOTOR_1_Step;
-		
-			if(step < 2 * MOTOR_1_Step_Transmition)
+			if(first_time_step_1)
 			{
-				Motor_Speed(MOTOR_1,10);
+				temp_steps = MOTOR_1_Step;
+				temp_steps_togo = step;
+				first_time_step_1=0;
+				Motor_Speed(MOTOR_1,0);
+				i=0;
+			}
+			if(temp_steps_togo < 2 * MOTOR_1_Step_Transmition)
+			{
+				Motor_Speed(MOTOR_1,30);
 				if(sign>0)
 				{
 					MOTOR_Direction(MOTOR_1,DOWN);
-					MOTOR_Enable(MOTOR_1,ENABLE);
-					while(MOTOR_1_Step != temp_steps + step)
+					
+					if(MOTOR_1_Step != temp_steps + temp_steps_togo)
 					{
+						MOTOR_Enable(MOTOR_1,ENABLE);
 						if(Motor_Get_ENABLE(MOTOR_1)==DISABLE)
 						{
-							step = 0;
+							temp_steps_togo = 0;
 							temp_steps = MOTOR_1_Step;
 							return 0;
 						}
 					}
-					MOTOR_Enable(MOTOR_1,DISABLE);
-					return 1;
+					else
+					{
+						MOTOR_Enable(MOTOR_1,DISABLE);
+						return 1;
+					}
 				}
 				else
 				{
 					MOTOR_Direction(MOTOR_1,UP);
-					MOTOR_Enable(MOTOR_1,ENABLE);
-					while(MOTOR_1_Step != temp_steps - step)
+					
+					if(MOTOR_1_Step != temp_steps - temp_steps_togo)
 					{
+						MOTOR_Enable(MOTOR_1,ENABLE);
 						if(Motor_Get_ENABLE(MOTOR_1)==DISABLE)
 						{
-							step = 0;
+							temp_steps_togo = 0;
 							temp_steps = MOTOR_1_Step;
 							return 0;
 						}
 					}
-					MOTOR_Enable(MOTOR_1,DISABLE);
-					return 1;
+					else
+					{
+						MOTOR_Enable(MOTOR_1,DISABLE);
+						return 1;
+					}
 				}
 			}
 			else
 			{
-				Motor_Speed(MOTOR_1,0);
 				
-				int i=0;
-				uint32_t old_stp=0;
+				
+				
 				if(sign>0)
 				{
 					MOTOR_Direction(MOTOR_1,DOWN);
-					MOTOR_Enable(MOTOR_1,ENABLE);
-					while(MOTOR_1_Step != temp_steps + step)
+					
+					if(MOTOR_1_Step != temp_steps + temp_steps_togo)
 					{
+						MOTOR_Enable(MOTOR_1,ENABLE);
 						
-						if(old_stp!=MOTOR_1_Step)
-						{
-							old_stp = MOTOR_1_Step;
 							if((((MOTOR_1_Step - temp_steps)%(MOTOR_1_Step_Transmition/100))==0)&&((MOTOR_1_Step - temp_steps)<=MOTOR_1_Step_Transmition)&&(i<=100))
 							{
 								i++;
 								Motor_Speed(MOTOR_1,i);
 							}
-							if(((((temp_steps+step) - MOTOR_1_Step)%(MOTOR_1_Step_Transmition/100))==0)&&(((temp_steps+step) - MOTOR_1_Step)<=MOTOR_1_Step_Transmition)&&(i>=2))
+							if(((((temp_steps+temp_steps_togo) - MOTOR_1_Step)%(MOTOR_1_Step_Transmition/100))==0)&&(((temp_steps+temp_steps_togo) - MOTOR_1_Step)<=MOTOR_1_Step_Transmition)&&(i>=2))
 							{
 								i--;
 								Motor_Speed(MOTOR_1,i);
 							}
-						}
+						
 						if(Motor_Get_ENABLE(MOTOR_1)==DISABLE)
 						{
-							step = 0;
+							temp_steps_togo = 0;
 							temp_steps = MOTOR_1_Step;
 							return 0;
 						}
 					}
+					else
+					{
+						
 					MOTOR_Enable(MOTOR_1,DISABLE);
 					return 1;
+					}
 				}
 				
 				else
 				{
 					MOTOR_Direction(MOTOR_1,UP);
 					
-					MOTOR_Enable(MOTOR_1,ENABLE);
-					while(MOTOR_1_Step != temp_steps - step)
+					
+					if(MOTOR_1_Step != temp_steps - temp_steps_togo)
 					{
-							if(old_stp!=MOTOR_1_Step)
-						{
-							old_stp = MOTOR_1_Step;
+						MOTOR_Enable(MOTOR_1,ENABLE);
+						
 							if((((temp_steps - MOTOR_1_Step )%(MOTOR_1_Step_Transmition/100))==0)&&((temp_steps - MOTOR_1_Step )<=MOTOR_1_Step_Transmition)&&(i<=100))
 							{
 								i++;
 								Motor_Speed(MOTOR_1,i);
 							}
-							if(((( MOTOR_1_Step - (temp_steps-step))%(MOTOR_1_Step_Transmition/100))==0)&&(( MOTOR_1_Step - (temp_steps-step))<=MOTOR_1_Step_Transmition)&&(i>=2))
+							if(((( MOTOR_1_Step - (temp_steps-temp_steps_togo))%(MOTOR_1_Step_Transmition/100))==0)&&(( MOTOR_1_Step - (temp_steps-temp_steps_togo))<=MOTOR_1_Step_Transmition)&&(i>=2))
 							{
 								i--;
 								Motor_Speed(MOTOR_1,i);
 							}
-						}
+						
 						
 						if(Motor_Get_ENABLE(MOTOR_1)==DISABLE)
 						{
-							step = 0;
+							temp_steps_togo = 0;
 							temp_steps = MOTOR_1_Step;
 							return 0;
 						}
 					}
+					else
+					{
 					MOTOR_Enable(MOTOR_1,DISABLE);
 					return 1;
+					}
 				}
 			}
 			
-
+		break;
 			
 		case MOTOR_2:
 			
-			temp_steps = MOTOR_2_Step;
-		
-		
-		
-			if(step < 2 * MOTOR_2_Step_Transmition)
+						if(first_time_step_2)
 			{
-				Motor_Speed(MOTOR_2,10);
+				temp_steps_2 = MOTOR_2_Step;
+				temp_steps_togo_2 = step;
+				first_time_step_2=0;
+				Motor_Speed(MOTOR_2,0);
+				i_2=0;
+			}
+		
+		
+		
+			if(temp_steps_togo_2 < 2 * MOTOR_2_Step_Transmition)
+			{
+				Motor_Speed(MOTOR_2,30);
 				if(sign>0)
 				{
 					MOTOR_Direction(MOTOR_2,RIGHT);
-					MOTOR_Enable(MOTOR_2,ENABLE);
-					while(MOTOR_2_Step != temp_steps + step)
+					
+					if(MOTOR_2_Step != temp_steps_2 + temp_steps_togo_2)
 					{
+						MOTOR_Enable(MOTOR_2,ENABLE);
 						
 						if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
 						{
-							step = 0;
-							temp_steps = MOTOR_2_Step;
+							temp_steps_togo_2 = 0;
+							temp_steps_2 = MOTOR_2_Step;
 							return 0;
 						}
 						
 					}
+					else
+					{
 					MOTOR_Enable(MOTOR_2,DISABLE);
 					return 1;
+					}
 				}
 				else
 				{
 					MOTOR_Direction(MOTOR_2,LEFT);
-					MOTOR_Enable(MOTOR_2,ENABLE);
-					while(MOTOR_2_Step != temp_steps - step)
+					
+					if(MOTOR_2_Step != temp_steps_2 - temp_steps_togo_2)
 					{
+						MOTOR_Enable(MOTOR_2,ENABLE);
 						if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
 						{
-							step = 0;
-							temp_steps = MOTOR_2_Step;
+							temp_steps_togo_2 = 0;
+							temp_steps_2 = MOTOR_2_Step;
 							return 0;
 						}
 					}
+					else
+					{
 					MOTOR_Enable(MOTOR_2,DISABLE);
 					return 1;
+					}
 				}
 			}
 			else
 			{
-				Motor_Speed(MOTOR_2,0);
 				
-				int i=0;
-				uint32_t old_stp=0;
+				
+				
 				if(sign>0)
 				{
 					MOTOR_Direction(MOTOR_2,RIGHT);
-					MOTOR_Enable(MOTOR_2,ENABLE);
-					while(MOTOR_2_Step != temp_steps + step)
+					
+					if(MOTOR_2_Step != temp_steps_2 + temp_steps_togo_2)
 					{
+						MOTOR_Enable(MOTOR_2,ENABLE);
 						
-						if(old_stp!=MOTOR_2_Step)
-						{
-							old_stp = MOTOR_2_Step;
-							if((((MOTOR_2_Step - temp_steps)%(MOTOR_2_Step_Transmition/100))==0)&&((MOTOR_2_Step - temp_steps)<=MOTOR_2_Step_Transmition)&&(i<=100))
+					
+							if((((MOTOR_2_Step - temp_steps_2)%(MOTOR_2_Step_Transmition/100))==0)&&((MOTOR_2_Step - temp_steps_2)<=MOTOR_2_Step_Transmition)&&(i_2<=100))
 							{
-								i++;
-								Motor_Speed(MOTOR_2,i);
+								i_2++;
+								Motor_Speed(MOTOR_2,i_2);
 							}
-							if(((((temp_steps+step) - MOTOR_2_Step)%(MOTOR_2_Step_Transmition/100))==0)&&(((temp_steps+step) - MOTOR_2_Step)<=MOTOR_2_Step_Transmition)&&(i>=2))
+							if(((((temp_steps_2+temp_steps_togo_2) - MOTOR_2_Step)%(MOTOR_2_Step_Transmition/100))==0)&&(((temp_steps_2+temp_steps_togo_2) - MOTOR_2_Step)<=MOTOR_2_Step_Transmition)&&(i_2>=2))
 							{
-								i--;
-								Motor_Speed(MOTOR_2,i);
+								i_2--;
+								Motor_Speed(MOTOR_2,i_2);
 							}
-						}
+						
 						if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
 						{
-							step = 0;
-							temp_steps = MOTOR_2_Step;
+							temp_steps_togo_2 = 0;
+							temp_steps_2 = MOTOR_2_Step;
 							return 0;
 						}
 					}
+					else
+					{
 					MOTOR_Enable(MOTOR_2,DISABLE);
 					return 1;
+					}
 				}
 				
 				else
 				{
 					MOTOR_Direction(MOTOR_2,LEFT);
 					
-					MOTOR_Enable(MOTOR_2,ENABLE);
-					while(MOTOR_2_Step != temp_steps - step)
+					
+					if(MOTOR_2_Step != temp_steps_2 - temp_steps_togo_2) 
 					{
-							if(old_stp!=MOTOR_2_Step)
-						{
-							old_stp = MOTOR_2_Step;
-							if((((temp_steps - MOTOR_2_Step )%(MOTOR_2_Step_Transmition/100))==0)&&((temp_steps - MOTOR_2_Step )<=MOTOR_2_Step_Transmition)&&(i<=100))
+						MOTOR_Enable(MOTOR_2,ENABLE);
+					
+							if((((temp_steps_2 - MOTOR_2_Step )%(MOTOR_2_Step_Transmition/100))==0)&&((temp_steps_2 - MOTOR_2_Step )<=MOTOR_2_Step_Transmition)&&(i_2<=100))
 							{
-								i++;
-								Motor_Speed(MOTOR_2,i);
+								i_2++;
+								Motor_Speed(MOTOR_2,i_2);
 							}
-							if(((( MOTOR_2_Step - (temp_steps-step))%(MOTOR_2_Step_Transmition/100))==0)&&(( MOTOR_2_Step - (temp_steps-step))<=MOTOR_2_Step_Transmition)&&(i>=2))
+							if(((( MOTOR_2_Step - (temp_steps_2-temp_steps_togo_2))%(MOTOR_2_Step_Transmition/100))==0)&&(( MOTOR_2_Step - (temp_steps_2-temp_steps_togo_2))<=MOTOR_2_Step_Transmition)&&(i>=2))
 							{
-								i--;
-								Motor_Speed(MOTOR_2,i);
+								i_2--;
+								Motor_Speed(MOTOR_2,i_2);
 							}
-						}
+						
 						
 						if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
 						{
-							step = 0;
-							temp_steps = MOTOR_2_Step;
+							temp_steps_togo_2 = 0;
+							temp_steps_2 = MOTOR_2_Step;
 							return 0;
 						}
 					}
+					else
+					{
 					MOTOR_Enable(MOTOR_2,DISABLE);
 					return 1;
+					}
 				}
 			}
 		

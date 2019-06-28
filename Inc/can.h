@@ -77,7 +77,7 @@ void MX_CAN1_Init(void);
 #define ERR_AWNS		0x55
 #define OPER_AWNS		0x01
 
-
+void CAN_TRANSMIT(uint32_t ID, uint8_t size, uint8_t Data[size]);
 
 
 /* USER CODE END Prototypes */

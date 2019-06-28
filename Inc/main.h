@@ -121,8 +121,24 @@ void Error_Handler(void);
 #define KBRD_LASER			0x32
 
 #define UI_BOARD		0x00810003
+#define MY_ID 			0x00810002
+#define ALERT_ID 		0x0F0F0F0F
+#define PC_ID				0x00810004
+#define STATE 0x01
+#define POSITION_RDY 0x02
 
+#define Min_line_ADDRESS   			0x080C0000
+#define Max_line_ADDRESS  			0x080C0004
+#define Max_step_ADDRESS   			0x080C0008
+#define Line_to_step_ADDRESS   	0x080C000C
 /* USER CODE END Private defines */
+typedef enum 
+{
+	MOVE_COMPLEATE,
+	POINT_COMPLEATE,
+	STOP,
+	ERR
+} pos_rdy;
 
 #ifdef __cplusplus
 }
