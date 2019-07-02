@@ -113,6 +113,8 @@ void Error_Handler(void);
 #define LAZER_ON HAL_GPIO_WritePin(LASER_GPIO_Port, LASER_Pin, GPIO_PIN_RESET)
 #define LAZER_OFF HAL_GPIO_WritePin(LASER_GPIO_Port, LASER_Pin, GPIO_PIN_SET)
 
+
+
 #define KBRD_LEFT 			0x39
 #define KBRD_RIGHT			0x38
 #define KBRD_UP					0x34

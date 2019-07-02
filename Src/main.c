@@ -115,7 +115,7 @@ int Motor_2_Steps_togo;
 extern _Bool first_time_step_1;
 extern _Bool first_time_step_2;
 int tmp_cmd_stp;
-float f_tmp_cmd_stp;
+int f_tmp_cmd_stp;
 int dir_1;
 int dir_2;
 _Bool Stop_flag_1;
@@ -123,6 +123,12 @@ _Bool Stop_flag_2;
 extern int MOTOR_1_Step;
 
 extern int MOTOR_2_Step;
+
+uint16_t line_mes_to_pc;
+uint16_t f_tmp_cmd_stp_pc;
+
+uint16_t old_line_mes_to_pc;
+uint16_t old_f_tmp_cmd_stp_pc;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -523,16 +529,11 @@ int main(void)
 									tmp_cmd_stp  |= RxMessage.Data[5]<<16;
 									tmp_cmd_stp  |= RxMessage.Data[4]<<8;
 									tmp_cmd_stp  |= RxMessage.Data[3];
-									f_tmp_cmd_stp = *(float*)&tmp_cmd_stp;
+									f_tmp_cmd_stp = tmp_cmd_stp;
 									
-									if(f_tmp_cmd_stp >= MOTOR_1_Step/100 )
-									{
-										Motor_1_Steps_togo = (f_tmp_cmd_stp - (MOTOR_1_Step/(Max_step/100)))*(Max_step/100);
-									}
-									else
-									{
-										Motor_1_Steps_togo = (f_tmp_cmd_stp - (MOTOR_1_Step/(Max_step/100)))*(Max_step/100);
-									}
+						
+									Motor_1_Steps_togo = (int)((f_tmp_cmd_stp - ((float)MOTOR_1_Step/((float)Max_step/1000)))*((float)Max_step/1000));
+									
 									if(Motor_1_Steps_togo==0)
 									{
 										POSITION_READY(ERR,MOTOR_1);
@@ -594,14 +595,17 @@ int main(void)
 				}
 			}
     /* USER CODE END WHILE */
-				if(Old_State!=DevState)
+				if((Old_State!=DevState)||(old_f_tmp_cmd_stp_pc!=f_tmp_cmd_stp_pc)||(old_line_mes_to_pc!=line_mes_to_pc))
 		{
+			
+			old_f_tmp_cmd_stp_pc = f_tmp_cmd_stp_pc;
+			old_line_mes_to_pc = line_mes_to_pc;
 			Old_State=DevState;
 			TxData[0] = STATE;
-			TxData[1] = 0x00;
-			TxData[2] = 0x00;
-			TxData[3] =	0x00;
-			TxData[4] =	0x00;
+			TxData[1] = line_mes_to_pc;
+			TxData[2] = line_mes_to_pc>>8;
+			TxData[3] =	f_tmp_cmd_stp_pc;
+			TxData[4] =	f_tmp_cmd_stp_pc>>8;
 			TxData[5] = DevState;
 			CAN_TRANSMIT(MY_ID,6,TxData);
 		}
@@ -610,10 +614,10 @@ int main(void)
 		{
 			CAN_ANWS_TIME=0;
 			TxData[0] = STATE;
-			TxData[1] = 0x00;
-			TxData[2] = 0x00;
-			TxData[3] =	0x00;
-			TxData[4] =	0x00;
+			TxData[1] = line_mes_to_pc;
+			TxData[2] = line_mes_to_pc>>8;
+			TxData[3] =	f_tmp_cmd_stp_pc;
+			TxData[4] =	f_tmp_cmd_stp_pc>>8;
 			TxData[5] = DevState;
 			CAN_TRANSMIT(MY_ID,6,TxData);
 		}
@@ -698,6 +702,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 if(raw_line_mesure)
 		 {
 			 line_mesure = raw_line_mesure;
+			 line_mes_to_pc = line_mesure;
 		 }
 		 
 	 }
@@ -710,7 +715,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
 		Error_Handler();
   }
-	
+	f_tmp_cmd_stp_pc = (int)(((float)MOTOR_1_Step/(float)Max_step)*1000);
 	if(Stop_flag_1)
 		{
 			

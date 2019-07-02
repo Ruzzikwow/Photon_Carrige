@@ -91,6 +91,8 @@ extern _Bool MOTOR_1_STEP_ERROR;
 extern _Bool MOTOR_2_STEP_ERROR;
 
 extern uint8_t CAN_RECIEVE_FLAG;
+
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -368,6 +370,7 @@ void TIM3_IRQHandler(void)
 			MOTOR_1_Step++;
 			
 		}
+		 
 	}
   /* USER CODE BEGIN TIM3_IRQn 1 */
 
