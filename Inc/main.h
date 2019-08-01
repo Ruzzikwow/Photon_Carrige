@@ -129,10 +129,11 @@ void Error_Handler(void);
 #define STATE 0x01
 #define POSITION_RDY 0x02
 
-#define Min_line_ADDRESS   			0x080C0000
-#define Max_line_ADDRESS  			0x080C0004
-#define Max_step_ADDRESS   			0x080C0008
-#define Line_to_step_ADDRESS   	0x080C000C
+#define Min_line_ADDRESS   			0x080A0000
+#define Max_line_ADDRESS  			0x080A0004
+#define Max_step_ADDRESS   			0x080A0008
+#define Line_to_step_ADDRESS   	0x080A000C
+#define CURRENT_STEP_ADDRESS   	0x08080000
 /* USER CODE END Private defines */
 typedef enum 
 {

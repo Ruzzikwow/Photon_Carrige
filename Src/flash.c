@@ -8,6 +8,9 @@
 #define SECTOR_9_START_ADDR  0x080C0000
 #define SECTOR_9_END_ADDR    0x080DFFFF
 
+#define SECTOR_10_START_ADDR  0x080D0000
+#define SECTOR_10_END_ADDR    0x080EFFFF
+
 #define MAX_CNT_STRING			1001
 
 
@@ -44,6 +47,8 @@ void flash_write (uint32_t flash_addres, type_prog type_program, uint32_t data )
 				EraseInitStruct.Sector = FLASH_SECTOR_9;
 				HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
 			}
+			
+
 		
 			switch(type_program)
 			{
@@ -86,7 +91,7 @@ void flash_write_koef_f (uint32_t  flash_addres, float data_f )
 	
 	if(flash_addres==Min_line_ADDRESS)
 	{
-		EraseInitStruct.Sector = FLASH_SECTOR_11;
+		EraseInitStruct.Sector = FLASH_SECTOR_9;
 		HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
 	}
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flash_addres, data );
@@ -115,9 +120,15 @@ void flash_write_koef (uint32_t  flash_addres, int data_f )
 	
 	if(flash_addres==Min_line_ADDRESS)
 	{
-		EraseInitStruct.Sector = FLASH_SECTOR_11;
+		EraseInitStruct.Sector = FLASH_SECTOR_9;
 		HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
 	}
+		if(flash_addres==CURRENT_STEP_ADDRESS)
+	{
+		EraseInitStruct.Sector = FLASH_SECTOR_8;
+		HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+	}
+	
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flash_addres, data );
 
 	

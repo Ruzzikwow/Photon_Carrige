@@ -81,7 +81,7 @@ extern uint8_t DevState;									//0x01 UP
 	
 	extern _Bool MOTOR_1_STEP_ERROR;
 extern _Bool MOTOR_2_STEP_ERROR;
-	
+	_Bool SAVE_STEPS;
 	_Bool Light_cnt;
 	_Bool Lazer_cnt;
 	
@@ -179,6 +179,11 @@ int main(void)
 	Max_line = *(int*)&(*(__IO uint32_t*)(Max_line_ADDRESS));
 	Max_step = *(int*)&(*(__IO uint32_t*)(Max_step_ADDRESS));
 	line_to_step_k = *(float*)&(*(__IO uint32_t*)(Line_to_step_ADDRESS));
+	MOTOR_1_Step = *(int*)&(*(__IO uint32_t*)(CURRENT_STEP_ADDRESS));
+	if(MOTOR_1_Step==0xFFFFFFFF)
+	{
+		MOTOR_1_Step=0;
+	}
 		if(HAL_GPIO_ReadPin(SW_UP_GPIO_Port,SW_UP_Pin)==GPIO_PIN_SET)
 	{
 		DevState|=0x40;
@@ -376,12 +381,15 @@ int main(void)
 									
 										UP_flag=0;
 										POSITION_READY (STOP,MOTOR_1);
-									
+										//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+										SAVE_STEPS=1;
 									break;
 								case KBRD_DOWN:
 								
 										DOWN_flag=0;
 										POSITION_READY (STOP,MOTOR_1);
+									//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+										SAVE_STEPS=1;
 									break;
 								
 								case KBRD_LEFT:
@@ -465,12 +473,15 @@ int main(void)
 									
 										UP_flag=0;
 										POSITION_READY (STOP,MOTOR_1);
-									
+									//	flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+										SAVE_STEPS=1;
 									break;
 								case KBRD_DOWN:
 								
 										DOWN_flag=0;
 										POSITION_READY (STOP,MOTOR_1);
+										//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+									SAVE_STEPS=1;
 									break;
 								
 								case KBRD_LEFT:
@@ -590,6 +601,8 @@ int main(void)
 								Mtr_DOWN=0;
 								Mtr_LEFT=0;
 								Mtr_RIGHT=0;
+								//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+							SAVE_STEPS=1;
 						}
 					}
 				}
@@ -691,6 +704,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 
 		 cnt_time=0;
 		CAN_ANWS_TIME=1;
+		 if(SAVE_STEPS)
+		 {
+			 SAVE_STEPS=0;
+			 flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+		 }
 		 
 	 }
 	 if(cnt==150)
@@ -833,6 +851,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 						flash_write_koef(Max_step_ADDRESS,Max_step);
 						flash_write_koef_f(Line_to_step_ADDRESS,line_to_step_k);
 						flash_write_koef(Max_line_ADDRESS,Max_line);
+						uint8_t *ptr1;
+						ptr1 = &TxData[1];
+						TxData[0] = 0x41;
+						*(int*)ptr1 = Min_line;
+						CAN_TRANSMIT(MY_ID,5,TxData);
+							
+						TxData[0] = 0x42;
+						ptr1 = &TxData[1];
+						*(int*)ptr1 = Max_line;
+						CAN_TRANSMIT(MY_ID,5,TxData);
+						SAVE_STEPS=1;
 					}
 		}	
 		if(!MOTOR_2_CALIBRATION)
