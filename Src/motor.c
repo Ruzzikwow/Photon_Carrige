@@ -239,7 +239,7 @@ _Bool Motor_to_Switch (motor_num motor, motor_direction dir, int speed)
 							MOTOR_Enable(motor,DISABLE);
 							return 1;
 						}
-
+					break;
 					case DOWN:
 						
 						MOTOR_Enable(motor,ENABLE);
@@ -250,7 +250,7 @@ _Bool Motor_to_Switch (motor_num motor, motor_direction dir, int speed)
 							}
 			
 					
-						
+					break;	
 					case LEFT:
 						return 0;
 				
@@ -270,7 +270,7 @@ _Bool Motor_to_Switch (motor_num motor, motor_direction dir, int speed)
 								MOTOR_Enable(motor,DISABLE);
 								return 1;
 						}
-						
+						break;
 					
 					case RIGHT:
 						MOTOR_Enable(motor,ENABLE);
@@ -280,7 +280,7 @@ _Bool Motor_to_Switch (motor_num motor, motor_direction dir, int speed)
 								return 1;
 						}
 					
-					
+					break;
 						
 					case UP:
 						return 0;
@@ -293,7 +293,7 @@ _Bool Motor_to_Switch (motor_num motor, motor_direction dir, int speed)
 				break;
 		}
 		
-		return 1;
+		return 0;
 	}
 	else
 	{
