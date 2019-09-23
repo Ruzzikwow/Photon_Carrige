@@ -309,304 +309,7 @@ int main(void)
 		DevState&=(~0x02);
 	}
 	
-	
-			if(CAN_RECIEVE_FLAG)
-			{
-				CAN_RECIEVE_FLAG=0;
-				
-				if(RxMessage.DLC>0)
-				{
-					if (RxMessage.ExtId == UI_BOARD)
-					{
-						if(RxMessage.Data[1]==0x00)
-						{
-							switch (RxMessage.Data[2])
-							{
-								case KBRD_LASER:
-										Lazer_cnt^=1;
-										if(Lazer_cnt)
-										{
-											LAZER_ON;
-										}
-										else
-										{
-											LAZER_OFF;
-										}
-									break;
-								case KBRD_LIGHT:
-									
-										Light_cnt^=1;
-										if(Light_cnt)
-										{
-											LIGHT_ON;
-										}
-										else
-										{
-											LIGHT_OFF;
-										}
-									break;
-										
-								case KBRD_UP:
-									
-										UP_flag=1;
-										DOWN_flag=0;
-										Hand_Controll_1++;
-									break;
-								case KBRD_DOWN:
-										UP_flag=0;
-										DOWN_flag=1;
-										Hand_Controll_1++;
-									break;
-								
-								case KBRD_LEFT:
-									
-										LEFT_flag=1;
-										RIGHT_flag=0;
-										Hand_Controll_2++;
-								
-									break;
-								case KBRD_RIGHT:
-									
-										RIGHT_flag=1;
-										LEFT_flag=0;
-										Hand_Controll_2++;
-									break;
-							}							
-						}
-						else if(RxMessage.Data[1]==0x10)
-						{
-							switch (RxMessage.Data[2])
-							{
-								case KBRD_UP:
-									
-										UP_flag=0;
-										POSITION_READY (STOP,MOTOR_1);
-										//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
-										SAVE_STEPS=1;
-									break;
-								case KBRD_DOWN:
-								
-										DOWN_flag=0;
-										POSITION_READY (STOP,MOTOR_1);
-									//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
-										SAVE_STEPS=1;
-									break;
-								
-								case KBRD_LEFT:
-									
-										LEFT_flag=0;
-										POSITION_READY (STOP,MOTOR_2);
-								
-									break;
-								case KBRD_RIGHT:
-									
-										RIGHT_flag=0;
-										POSITION_READY (STOP,MOTOR_2);
-									break;
-							}								
-						}
-					}
-					
-					if (RxMessage.ExtId == PC_ID)
-					{
-						if(RxMessage.Data[1]==0x00)
-						{
-							switch (RxMessage.Data[2])
-							{
-								case KBRD_LASER:
-										Lazer_cnt^=1;
-										if(Lazer_cnt)
-										{
-											LAZER_ON;
-										}
-										else
-										{
-											LAZER_OFF;
-										}
-									break;
-								case KBRD_LIGHT:
-									
-										Light_cnt^=1;
-										if(Light_cnt)
-										{
-											LIGHT_ON;
-										}
-										else
-										{
-											LIGHT_OFF;
-										}
-									break;
-										
-								case KBRD_UP:
-									
-										UP_flag=1;
-										DOWN_flag=0;
-										Hand_Controll_1++;
-									break;
-								case KBRD_DOWN:
-										UP_flag=0;
-										DOWN_flag=1;
-										Hand_Controll_1++;
-									break;
-								
-								case KBRD_LEFT:
-									
-										LEFT_flag=1;
-										RIGHT_flag=0;
-										Hand_Controll_2++;
-								
-									break;
-								case KBRD_RIGHT:
-									
-										RIGHT_flag=1;
-										LEFT_flag=0;
-										Hand_Controll_2++;
-									break;
-							}							
-						}
-						else if(RxMessage.Data[1]==0x10)
-						{
-					
-							switch (RxMessage.Data[2])
-							{
-								case KBRD_UP:
-									
-										UP_flag=0;
-										POSITION_READY (STOP,MOTOR_1);
-									//	flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
-										SAVE_STEPS=1;
-									break;
-								case KBRD_DOWN:
-								
-										DOWN_flag=0;
-										POSITION_READY (STOP,MOTOR_1);
-										//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
-									SAVE_STEPS=1;
-									break;
-								
-								case KBRD_LEFT:
-									
-										LEFT_flag=0;
-										POSITION_READY (STOP,MOTOR_2);
-								
-									break;
-								case KBRD_RIGHT:
-									
-										RIGHT_flag=0;
-										POSITION_READY (STOP,MOTOR_2);
-									break;
-							}							
-														
-						}
-						else if(RxMessage.Data[1] == 0x20)
-						{
-							if(RxMessage.Data[2] == 0x00) //√ÓËÁÓÌÚ‡Î¸Ì˚È
-							{
-								if(Motor_Get_ENABLE(MOTOR_2) == DISABLE)
-								{
-									 tmp_cmd_stp  = 0;
-									 tmp_cmd_stp  |= RxMessage.Data[6]<<24;
-									 tmp_cmd_stp  |= RxMessage.Data[5]<<16;
-									 tmp_cmd_stp  |= RxMessage.Data[4]<<8;
-									 tmp_cmd_stp  |= RxMessage.Data[3];
-									if(tmp_cmd_stp*line_to_step_k>= MOTOR_2_Step)
-									{
-										Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
-									}
-									else
-									{
-										Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
-									}
-									if(Motor_2_Steps_togo==0)
-									{
-										POSITION_READY(MOVE_COMPLEATE,MOTOR_2);
-									}
-									else
-									{
-										first_time_step_2 = 1;
-										MOTOR_2_STEP_ERROR = 0;
-									}
-								}
-								else
-								{
-									POSITION_READY(ERR,MOTOR_2);
-								}
-							}
-							else if(RxMessage.Data[2] == 0x01) //¬ÂËÚËÍ‡Î¸Ì˚È
-							{	if(Motor_Get_ENABLE(MOTOR_1) == DISABLE)
-								{
-									tmp_cmd_stp = 0; 
-									tmp_cmd_stp  |= RxMessage.Data[6]<<24;
-									tmp_cmd_stp  |= RxMessage.Data[5]<<16;
-									tmp_cmd_stp  |= RxMessage.Data[4]<<8;
-									tmp_cmd_stp  |= RxMessage.Data[3];
-									f_tmp_cmd_stp = tmp_cmd_stp;
-									
-						
-									Motor_1_Steps_togo = (int)((f_tmp_cmd_stp - ((float)MOTOR_1_Step/((float)Max_step/1000)))*((float)Max_step/1000));
-									
-									if(Motor_1_Steps_togo==0)
-									{
-										POSITION_READY(ERR,MOTOR_1);
-									}
-									else
-									{
-										first_time_step_1 = 1;
-										MOTOR_1_STEP_ERROR = 0;
-									}
-								}
-								else
-								{
-									POSITION_READY(ERR,MOTOR_1);
-								}
-							}
-						}
-						else if (RxMessage.Data[1] == 0x30) //Í‡ÎË·Ó‚Í‡
-						{
-								Motor1_Need_Clbr=1;
-								Motor2_Need_Clbr=1;
-								Mtr_UP=1;
-								Mtr_DOWN=1;
-								Mtr_LEFT=1;
-								Mtr_RIGHT=1;
-						}
-						else if (RxMessage.Data[1] == 0x40) //Í‡ÎË·Ó‚Í‡
-						{
-								uint8_t *ptr;
-								ptr = &TxData[1];
-								TxData[0] = 0x41;
-								*(int*)ptr = Min_line;
-								CAN_TRANSMIT(MY_ID,5,TxData);
-							
-								TxData[0] = 0x42;
-								ptr = &TxData[1];
-								*(int*)ptr = Max_line;
-								CAN_TRANSMIT(MY_ID,5,TxData);
-							
-							
-							
-						}
-						else if (RxMessage.Data[1] == 0x50) //—ÚÓÔ
-						{
-								
-								Stop_flag_1=1;
-								Stop_flag_2=1;
-								Motor_2_Steps_togo = 0;
-								Motor_1_Steps_togo = 0;
-								first_time_step_1=1;
-								first_time_step_2=1;
-								Motor1_Need_Clbr=0;
-								Motor2_Need_Clbr=0;
-								Mtr_UP=0;
-								Mtr_DOWN=0;
-								Mtr_LEFT=0;
-								Mtr_RIGHT=0;
-								//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
-							SAVE_STEPS=1;
-						}
-					}
-				}
-			}
+
     /* USER CODE END WHILE */
 				if((Old_State!=DevState)||(old_f_tmp_cmd_stp_pc!=f_tmp_cmd_stp_pc)||(old_line_mes_to_pc!=line_mes_to_pc))
 		{
@@ -980,6 +683,308 @@ void POSITION_READY (pos_rdy state, motor_num mot)
 				CAN_TRANSMIT(MY_ID,3,TxData);
 			break;
 	}
+}
+
+	void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef *hcan)
+{
+	
+
+					CAN_RECIEVE_FLAG=0;
+				
+				if(RxMessage.DLC>0)
+				{
+					if (RxMessage.ExtId == UI_BOARD)
+					{
+						if(RxMessage.Data[1]==0x00)
+						{
+							switch (RxMessage.Data[2])
+							{
+								case KBRD_LASER:
+										Lazer_cnt^=1;
+										if(Lazer_cnt)
+										{
+											LAZER_ON;
+										}
+										else
+										{
+											LAZER_OFF;
+										}
+									break;
+								case KBRD_LIGHT:
+									
+										Light_cnt^=1;
+										if(Light_cnt)
+										{
+											LIGHT_ON;
+										}
+										else
+										{
+											LIGHT_OFF;
+										}
+									break;
+										
+								case KBRD_UP:
+									
+										UP_flag=1;
+										DOWN_flag=0;
+										Hand_Controll_1++;
+									break;
+								case KBRD_DOWN:
+										UP_flag=0;
+										DOWN_flag=1;
+										Hand_Controll_1++;
+									break;
+								
+								case KBRD_LEFT:
+									
+										LEFT_flag=1;
+										RIGHT_flag=0;
+										Hand_Controll_2++;
+								
+									break;
+								case KBRD_RIGHT:
+									
+										RIGHT_flag=1;
+										LEFT_flag=0;
+										Hand_Controll_2++;
+									break;
+							}							
+						}
+						else if(RxMessage.Data[1]==0x10)
+						{
+							switch (RxMessage.Data[2])
+							{
+								case KBRD_UP:
+									
+										UP_flag=0;
+										POSITION_READY (STOP,MOTOR_1);
+										//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+										SAVE_STEPS=1;
+									break;
+								case KBRD_DOWN:
+								
+										DOWN_flag=0;
+										POSITION_READY (STOP,MOTOR_1);
+									//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+										SAVE_STEPS=1;
+									break;
+								
+								case KBRD_LEFT:
+									
+										LEFT_flag=0;
+										POSITION_READY (STOP,MOTOR_2);
+								
+									break;
+								case KBRD_RIGHT:
+									
+										RIGHT_flag=0;
+										POSITION_READY (STOP,MOTOR_2);
+									break;
+							}								
+						}
+					}
+					
+					if (RxMessage.ExtId == PC_ID)
+					{
+						if(RxMessage.Data[1]==0x00)
+						{
+							switch (RxMessage.Data[2])
+							{
+								case KBRD_LASER:
+										Lazer_cnt^=1;
+										if(Lazer_cnt)
+										{
+											LAZER_ON;
+										}
+										else
+										{
+											LAZER_OFF;
+										}
+									break;
+								case KBRD_LIGHT:
+									
+										Light_cnt^=1;
+										if(Light_cnt)
+										{
+											LIGHT_ON;
+										}
+										else
+										{
+											LIGHT_OFF;
+										}
+									break;
+										
+								case KBRD_UP:
+									
+										UP_flag=1;
+										DOWN_flag=0;
+										Hand_Controll_1++;
+									break;
+								case KBRD_DOWN:
+										UP_flag=0;
+										DOWN_flag=1;
+										Hand_Controll_1++;
+									break;
+								
+								case KBRD_LEFT:
+									
+										LEFT_flag=1;
+										RIGHT_flag=0;
+										Hand_Controll_2++;
+								
+									break;
+								case KBRD_RIGHT:
+									
+										RIGHT_flag=1;
+										LEFT_flag=0;
+										Hand_Controll_2++;
+									break;
+							}							
+						}
+						else if(RxMessage.Data[1]==0x10)
+						{
+					
+							switch (RxMessage.Data[2])
+							{
+								case KBRD_UP:
+									
+										UP_flag=0;
+										POSITION_READY (STOP,MOTOR_1);
+									//	flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+										SAVE_STEPS=1;
+									break;
+								case KBRD_DOWN:
+								
+										DOWN_flag=0;
+										POSITION_READY (STOP,MOTOR_1);
+										//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+									SAVE_STEPS=1;
+									break;
+								
+								case KBRD_LEFT:
+									
+										LEFT_flag=0;
+										POSITION_READY (STOP,MOTOR_2);
+								
+									break;
+								case KBRD_RIGHT:
+									
+										RIGHT_flag=0;
+										POSITION_READY (STOP,MOTOR_2);
+									break;
+							}							
+														
+						}
+						else if(RxMessage.Data[1] == 0x20)
+						{
+							if(RxMessage.Data[2] == 0x00) //ƒÆ®ßÆÓ≥†ÏΩ≠Û©çä							
+								{
+								if(Motor_Get_ENABLE(MOTOR_2) == DISABLE)
+								{
+									 tmp_cmd_stp  = 0;
+									 tmp_cmd_stp  |= RxMessage.Data[6]<<24;
+									 tmp_cmd_stp  |= RxMessage.Data[5]<<16;
+									 tmp_cmd_stp  |= RxMessage.Data[4]<<8;
+									 tmp_cmd_stp  |= RxMessage.Data[3];
+									if(tmp_cmd_stp*line_to_step_k>= MOTOR_2_Step)
+									{
+										Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
+									}
+									else
+									{
+										Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
+									}
+									if(Motor_2_Steps_togo==0)
+									{
+										POSITION_READY(MOVE_COMPLEATE,MOTOR_2);
+									}
+									else
+									{
+										first_time_step_2 = 1;
+										MOTOR_2_STEP_ERROR = 0;
+									}
+								}
+								else
+								{
+									POSITION_READY(ERR,MOTOR_2);
+								}
+							}
+							else if(RxMessage.Data[2] == 0x01) //√•®≤®Î°´≠ª©
+							{	if(Motor_Get_ENABLE(MOTOR_1) == DISABLE)
+								{
+									tmp_cmd_stp = 0; 
+									tmp_cmd_stp  |= RxMessage.Data[6]<<24;
+									tmp_cmd_stp  |= RxMessage.Data[5]<<16;
+									tmp_cmd_stp  |= RxMessage.Data[4]<<8;
+									tmp_cmd_stp  |= RxMessage.Data[3];
+									f_tmp_cmd_stp = tmp_cmd_stp;
+									
+						
+									Motor_1_Steps_togo = (int)((f_tmp_cmd_stp - ((float)MOTOR_1_Step/((float)Max_step/1000)))*((float)Max_step/1000));
+									
+									if(Motor_1_Steps_togo==0)
+									{
+										POSITION_READY(ERR,MOTOR_1);
+									}
+									else
+									{
+										first_time_step_1 = 1;
+										MOTOR_1_STEP_ERROR = 0;
+									}
+								}
+								else
+								{
+									POSITION_READY(ERR,MOTOR_1);
+								}
+							}
+						}
+						else if (RxMessage.Data[1] == 0x30) //Î°´È¢∞Ô£™Õä						
+							{
+								Motor1_Need_Clbr=1;
+								Motor2_Need_Clbr=1;
+								Mtr_UP=1;
+								Mtr_DOWN=1;
+								Mtr_LEFT=1;
+								Mtr_RIGHT=1;
+						}
+						else if (RxMessage.Data[1] == 0x40) //Î°´È¢∞Ô£™Õä						
+							{
+								uint8_t *ptr;
+								ptr = &TxData[1];
+								TxData[0] = 0x41;
+								*(int*)ptr = Min_line;
+								CAN_TRANSMIT(MY_ID,5,TxData);
+							
+								TxData[0] = 0x42;
+								ptr = &TxData[1];
+								*(int*)ptr = Max_line;
+								CAN_TRANSMIT(MY_ID,5,TxData);
+							
+							
+							
+						}
+						else if (RxMessage.Data[1] == 0x50) //“≤ÔØç
+						{
+								
+								Stop_flag_1=1;
+								Stop_flag_2=1;
+								Motor_2_Steps_togo = 0;
+								Motor_1_Steps_togo = 0;
+								first_time_step_1=1;
+								first_time_step_2=1;
+								Motor1_Need_Clbr=0;
+								Motor2_Need_Clbr=0;
+								Mtr_UP=0;
+								Mtr_DOWN=0;
+								Mtr_LEFT=0;
+								Mtr_RIGHT=0;
+								//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
+							SAVE_STEPS=1;
+						}
+					}
+				}
+
+	
 }
 /**
   * @brief  This function is executed in case of error occurrence.

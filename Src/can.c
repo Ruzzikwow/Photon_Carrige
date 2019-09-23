@@ -175,14 +175,7 @@ void CAN_TRANSMIT(uint32_t ID, uint8_t size, uint8_t Data[size])
 
 }
 
-	void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef *hcan)
-{
-	
 
-	
-	CAN_RECIEVE_FLAG=1;
-	
-}
 
 /* USER CODE END 1 */
 
