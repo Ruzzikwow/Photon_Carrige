@@ -140,12 +140,12 @@ void Motor_Speed (motor_num motor,uint8_t percent)
 		case MOTOR_1:
 			//max 305 arr 288 ccr
 			htim3.Instance->ARR = 1130 - percent*10;
-			htim3.Instance->CCR3 = (htim3.Instance->ARR)*0.99;
+			htim3.Instance->CCR3 = (htim3.Instance->ARR)*0.5;
 			break;
 		case MOTOR_2:
 			
 			htim8.Instance->ARR = 1130 - percent*10;
-			htim8.Instance->CCR2 = (htim8.Instance->ARR)*0.99;
+			htim8.Instance->CCR2 = (htim8.Instance->ARR)*0.5;
 			break;
 	}
 }

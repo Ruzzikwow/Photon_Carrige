@@ -789,7 +789,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				{
 					if(UP_flag)
 					{
-						if(Motor_to_Switch(MOTOR_1, UP, 50))
+						if(Motor_to_Switch(MOTOR_1, UP, 30))
 						{
 							UP_flag=0;
 							POSITION_READY (POINT_COMPLEATE,MOTOR_1);
@@ -797,7 +797,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					}
 					else if(DOWN_flag)
 					{
-						if(Motor_to_Switch(MOTOR_1, DOWN, 50))
+						if(Motor_to_Switch(MOTOR_1, DOWN, 30))
 						{
 							DOWN_flag=0;
 							POSITION_READY (POINT_COMPLEATE,MOTOR_1);
