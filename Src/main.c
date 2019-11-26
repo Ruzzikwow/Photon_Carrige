@@ -138,6 +138,8 @@ uint8_t 							msglenght;
 int8_t 								buffer_error;
 uint8_t ID_Data[4];
 uint8_t multiply;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -471,15 +473,9 @@ int main(void)
 									 tmp_cmd_stp  |= RMessage.Data[5]<<16;
 									 tmp_cmd_stp  |= RMessage.Data[4]<<8;
 									 tmp_cmd_stp  |= RMessage.Data[3];
-//									if(tmp_cmd_stp*line_to_step_k>= MOTOR_2_Step)
-//									{
-//										Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
-//									}
-//									else
-//									{
-//										Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
-//									}
+
 									multiply=1;
+									
 									if(fabs((float)(tmp_cmd_stp - line_mesure))<100)
 										{
 											multiply=25;

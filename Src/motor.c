@@ -41,6 +41,8 @@ int MOTOR_2_Step_Transmition	= 10000;
 	
 	int i_2=0;
 	int old_stp_2=0;
+	
+int motor_was_en;
 
 void MOTOR_ToggleDir(motor_num motor)
 {
@@ -124,8 +126,15 @@ void MOTOR_Enable (motor_num motor,FunctionalState state)
 				{
 					case ENABLE:
 						HAL_GPIO_WritePin(MOTOR2_ENABLE_GPIO_Port, MOTOR2_ENABLE_Pin, GPIO_PIN_SET);
+						motor_was_en = 100;
 						break;
 					case DISABLE:
+						if(motor_was_en)
+						{
+							htim8.Instance->CCR2 = 0;
+							motor_was_en--;
+							break;
+						}
 						HAL_GPIO_WritePin(MOTOR2_ENABLE_GPIO_Port, MOTOR2_ENABLE_Pin, GPIO_PIN_RESET);
 						break;
 				}
@@ -517,7 +526,7 @@ _Bool Motor_step (motor_num motor,uint32_t step,int sign, uint8_t mult)
 				{
 					MOTOR_Direction(MOTOR_2,LEFT);
 					
-					if(line_mesure < tmp_cmd_stp)//(MOTOR_2_Step != temp_steps_2 + temp_steps_togo_2)
+					if(temp_steps_togo_2!=0)//(line_mesure < tmp_cmd_stp)//(MOTOR_2_Step != temp_steps_2 + temp_steps_togo_2)
 					{
 						MOTOR_Enable(MOTOR_2,ENABLE);
 						
@@ -539,7 +548,7 @@ _Bool Motor_step (motor_num motor,uint32_t step,int sign, uint8_t mult)
 				{
 					MOTOR_Direction(MOTOR_2,RIGHT);
 					
-					if(line_mesure > tmp_cmd_stp)
+					if(temp_steps_togo_2!=0)//(line_mesure > tmp_cmd_stp)
 					{
 						MOTOR_Enable(MOTOR_2,ENABLE);
 						if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
