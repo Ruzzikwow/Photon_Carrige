@@ -47,6 +47,7 @@
 #include "usart.h"
 #include "flash.h"
 #include "fifo.h"
+#include "math.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -113,10 +114,10 @@ int Max_step;
 extern _Bool Uart_flag;
 extern float line_to_step_k;
 int Motor_1_Steps_togo;
-int Motor_2_Steps_togo;
+extern int Motor_2_Steps_togo;
 extern _Bool first_time_step_1;
 extern _Bool first_time_step_2;
-int tmp_cmd_stp;
+extern int tmp_cmd_stp;
 int f_tmp_cmd_stp;
 int dir_1;
 int dir_2;
@@ -136,6 +137,7 @@ uint16_t old_f_tmp_cmd_stp_pc;
 uint8_t 							msglenght;
 int8_t 								buffer_error;
 uint8_t ID_Data[4];
+uint8_t multiply;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -469,13 +471,31 @@ int main(void)
 									 tmp_cmd_stp  |= RMessage.Data[5]<<16;
 									 tmp_cmd_stp  |= RMessage.Data[4]<<8;
 									 tmp_cmd_stp  |= RMessage.Data[3];
-									if(tmp_cmd_stp*line_to_step_k>= MOTOR_2_Step)
+//									if(tmp_cmd_stp*line_to_step_k>= MOTOR_2_Step)
+//									{
+//										Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
+//									}
+//									else
+//									{
+//										Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
+//									}
+									multiply=1;
+									if(fabs((float)(tmp_cmd_stp - line_mesure))<100)
+										{
+											multiply=25;
+										}
+									if(fabs((float)(tmp_cmd_stp - line_mesure))<500)
+										{
+											multiply=10;
+										}
+									if(tmp_cmd_stp > line_mesure)
 									{
 										Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
 									}
 									else
 									{
 										Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
+									
 									}
 									if(Motor_2_Steps_togo==0)
 									{
@@ -765,6 +785,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			if(Motor_Calibration(MOTOR_1))
 			{
 				Motor1_Need_Clbr=0;
+				flash_write_koef(Min_line_ADDRESS,Min_line);
+						flash_write_koef(Max_step_ADDRESS,Max_step);
+						flash_write_koef_f(Line_to_step_ADDRESS,line_to_step_k);
+						flash_write_koef(Max_line_ADDRESS,Max_line);
 				
 			}
 		}	
@@ -826,7 +850,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				{
 					if(Motor_1_Steps_togo>0)
 					{
-							if(Motor_step(MOTOR_1,Motor_1_Steps_togo,1))
+							if(Motor_step(MOTOR_1,Motor_1_Steps_togo,1,1))
 							{
 								POSITION_READY (MOVE_COMPLEATE,MOTOR_1);
 								Motor_1_Steps_togo=0;
@@ -834,7 +858,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					}
 					else
 					{
-							if(Motor_step(MOTOR_1,(-Motor_1_Steps_togo),-1))
+							if(Motor_step(MOTOR_1,(-Motor_1_Steps_togo),-1,1))
 							{
 								POSITION_READY (MOVE_COMPLEATE,MOTOR_1);
 								Motor_1_Steps_togo=0;
@@ -860,10 +884,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			if(Motor_Calibration(MOTOR_2))
 					{
 						Motor2_Need_Clbr=0;
-						flash_write_koef(Min_line_ADDRESS,Min_line);
-						flash_write_koef(Max_step_ADDRESS,Max_step);
-						flash_write_koef_f(Line_to_step_ADDRESS,line_to_step_k);
-						flash_write_koef(Max_line_ADDRESS,Max_line);
+						
 						uint8_t *ptr1;
 						ptr1 = &TxData[1];
 						TxData[0] = 0x41;
@@ -936,18 +957,46 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				{
 					if(Motor_2_Steps_togo>0)
 					{
-							if(Motor_step(MOTOR_2,Motor_2_Steps_togo,1))
+							if(Motor_step(MOTOR_2,Motor_2_Steps_togo,1,multiply))
 							{
 								POSITION_READY (MOVE_COMPLEATE,MOTOR_2);
 								Motor_2_Steps_togo=0;
+								float abs_tmp = tmp_cmd_stp - line_mesure;
+								if(fabs(abs_tmp)>2)
+								{
+									multiply*=5;
+									if(tmp_cmd_stp > line_mesure)
+										{
+											Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
+											
+										}
+										else
+										{
+											Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
+										}
+								}
 							}
 					}
 					else
 					{
-							if(Motor_step(MOTOR_2,(-Motor_2_Steps_togo),-1))
+							if(Motor_step(MOTOR_2,(-Motor_2_Steps_togo),-1,multiply))
 							{
 								POSITION_READY (MOVE_COMPLEATE,MOTOR_2);
 								Motor_2_Steps_togo=0;
+								float abs_tmp = tmp_cmd_stp - line_mesure;
+								if(fabs(abs_tmp)>2)
+								{
+									multiply*=5;
+									if(tmp_cmd_stp > line_mesure)
+										{
+											Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
+											
+										}
+										else
+										{
+											Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
+										}
+								}
 							}
 					}
 				}
