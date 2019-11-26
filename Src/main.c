@@ -475,15 +475,7 @@ int main(void)
 									 tmp_cmd_stp  |= RMessage.Data[3];
 
 									multiply=1;
-									
-									if(fabs((float)(tmp_cmd_stp - line_mesure))<100)
-										{
-											multiply=25;
-										}
-									if(fabs((float)(tmp_cmd_stp - line_mesure))<500)
-										{
-											multiply=10;
-										}
+
 									if(tmp_cmd_stp > line_mesure)
 									{
 										Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
@@ -875,7 +867,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				}
 				Stop_flag_2=0;
 		}
-		if(Motor2_Need_Clbr)
+		if(Motor2_Need_Clbr) //калибровка
 		{
 			if(Motor_Calibration(MOTOR_2))
 					{
@@ -896,7 +888,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}	
 		if(!MOTOR_2_CALIBRATION)
 		{
-				if(Motor_Get_ENABLE(MOTOR_2)==ENABLE)
+				if(Motor_Get_ENABLE(MOTOR_2)==ENABLE) //концевики
 				{
 					if((MOTOR_2_STEP_ERROR)&&(Hand_Controll_2==0))
 					{
@@ -924,7 +916,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				}
 				
 
-				if(Hand_Controll_2)
+				if(Hand_Controll_2) //ручное
 				{
 					if(LEFT_flag)
 					{
@@ -949,16 +941,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 						Hand_Controll_2--;
 					}
 				}
-				if(Motor_2_Steps_togo!=0)
+				if(Motor_2_Steps_togo!=0) //по шапгам с компа
 				{
 					if(Motor_2_Steps_togo>0)
 					{
+							if(Motor_2_Steps_togo<5000) //маленькое расстояние 
+							{
+								multiply=15;
+							}
 							if(Motor_step(MOTOR_2,Motor_2_Steps_togo,1,multiply))
 							{
 								POSITION_READY (MOVE_COMPLEATE,MOTOR_2);
 								Motor_2_Steps_togo=0;
 								float abs_tmp = tmp_cmd_stp - line_mesure;
-								if(fabs(abs_tmp)>2)
+								if(fabs(abs_tmp)>2) //прошли по шагам остновное начинаем подъежать
 								{
 									multiply*=5;
 									if(tmp_cmd_stp > line_mesure)
