@@ -7,6 +7,7 @@
 																					//0x08 RIGHT
 int MOTOR_1_Step_Transmition	= 10000;
 int MOTOR_2_Step_Transmition	= 10000;
+int Motor_2_Steps_togo;
  int MOTOR_1_Step;
 
  int MOTOR_2_Step;
@@ -126,7 +127,7 @@ void MOTOR_Enable (motor_num motor,FunctionalState state)
 				{
 					case ENABLE:
 						HAL_GPIO_WritePin(MOTOR2_ENABLE_GPIO_Port, MOTOR2_ENABLE_Pin, GPIO_PIN_SET);
-						motor_was_en = 100;
+						motor_was_en = 1000;
 						break;
 					case DISABLE:
 						if(motor_was_en)
@@ -525,11 +526,11 @@ _Bool Motor_step (motor_num motor,uint32_t step,int sign, uint8_t mult)
 				if(sign>0)
 				{
 					MOTOR_Direction(MOTOR_2,LEFT);
-					
+					Motor_2_Steps_togo--;
 					if(temp_steps_togo_2!=0)//(line_mesure < tmp_cmd_stp)//(MOTOR_2_Step != temp_steps_2 + temp_steps_togo_2)
 					{
 						MOTOR_Enable(MOTOR_2,ENABLE);
-						
+						temp_steps_togo_2--;
 						if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
 						{
 							temp_steps_togo_2 = 0;
@@ -547,10 +548,11 @@ _Bool Motor_step (motor_num motor,uint32_t step,int sign, uint8_t mult)
 				else
 				{
 					MOTOR_Direction(MOTOR_2,RIGHT);
-					
+					Motor_2_Steps_togo++;
 					if(temp_steps_togo_2!=0)//(line_mesure > tmp_cmd_stp)
 					{
 						MOTOR_Enable(MOTOR_2,ENABLE);
+						temp_steps_togo_2--;
 						if(Motor_Get_ENABLE(MOTOR_2)==DISABLE)
 						{
 							temp_steps_togo_2 = 0;

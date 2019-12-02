@@ -118,11 +118,13 @@ extern int Motor_2_Steps_togo;
 extern _Bool first_time_step_1;
 extern _Bool first_time_step_2;
 extern int tmp_cmd_stp;
+int mesure_cmd_stp;
 int f_tmp_cmd_stp;
 int dir_1;
 int dir_2;
 _Bool Stop_flag_1;
 _Bool Stop_flag_2;
+_Bool  flag_position;
 extern int MOTOR_1_Step;
 
 extern int MOTOR_2_Step;
@@ -137,8 +139,8 @@ uint16_t old_f_tmp_cmd_stp_pc;
 uint8_t 							msglenght;
 int8_t 								buffer_error;
 uint8_t ID_Data[4];
-uint8_t multiply;
-
+int multiply =1;
+_Bool check_pos;
 
 /* USER CODE END PV */
 
@@ -475,14 +477,21 @@ int main(void)
 									 tmp_cmd_stp  |= RMessage.Data[3];
 
 									multiply=1;
-
+									flag_position=1;
+										mesure_cmd_stp =line_mesure - tmp_cmd_stp;
+									if(mesure_cmd_stp<0)
+									{
+										mesure_cmd_stp*=-1;
+									}
 									if(tmp_cmd_stp > line_mesure)
 									{
-										Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
+										
+										Motor_2_Steps_togo = mesure_cmd_stp*line_to_step_k;
 									}
 									else
 									{
-										Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
+										
+										Motor_2_Steps_togo = -(mesure_cmd_stp*line_to_step_k);
 									
 									}
 									if(Motor_2_Steps_togo==0)
@@ -537,6 +546,7 @@ int main(void)
 								Mtr_DOWN=1;
 								Mtr_LEFT=1;
 								Mtr_RIGHT=1;
+								multiply=1;
 						}
 						else if (RMessage.Data[1] == 0x40) //лЎ«йў°пЈЄНЉ						
 							{
@@ -569,6 +579,7 @@ int main(void)
 								Mtr_DOWN=0;
 								Mtr_LEFT=0;
 								Mtr_RIGHT=0;
+								multiply=1;
 								//flash_write_koef(CURRENT_STEP_ADDRESS,MOTOR_1_Step);
 							SAVE_STEPS=1;
 						}
@@ -742,7 +753,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 {
 			 line_mesure = raw_line_mesure;
 			 line_mes_to_pc = line_mesure;
+			 if(check_pos)
+			 {
+				 check_pos=0;
+				 Motor_2_Steps_togo=1;
+			 }
 		 }
+		 
 		 
 	 }
 		 
@@ -863,12 +880,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			if(Motor_Get_ENABLE(MOTOR_2)==ENABLE)
 				{
 					MOTOR_Enable(MOTOR_2,DISABLE);
+					Motor_2_Steps_togo=0;
+					multiply=1;
 					POSITION_READY (STOP,MOTOR_2);
 				}
 				Stop_flag_2=0;
 		}
 		if(Motor2_Need_Clbr) //калибровка
 		{
+			multiply=1;
 			if(Motor_Calibration(MOTOR_2))
 					{
 						Motor2_Need_Clbr=0;
@@ -890,6 +910,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 				if(Motor_Get_ENABLE(MOTOR_2)==ENABLE) //концевики
 				{
+					
 					if((MOTOR_2_STEP_ERROR)&&(Hand_Controll_2==0))
 					{
 						MOTOR_Enable(MOTOR_2,DISABLE);
@@ -918,6 +939,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 				if(Hand_Controll_2) //ручное
 				{
+						multiply=1;
 					if(LEFT_flag)
 					{
 						if(Motor_to_Switch(MOTOR_2, LEFT, 30))
@@ -925,6 +947,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 							LEFT_flag=0;
 							POSITION_READY (POINT_COMPLEATE,MOTOR_2);
 						}
+						return;
 						
 					}
 					else if(RIGHT_flag)
@@ -934,20 +957,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 							RIGHT_flag=0;
 							POSITION_READY (POINT_COMPLEATE,MOTOR_2);
 						}
+						return;
 					}
 					else
 					{
 						MOTOR_Enable(MOTOR_2, DISABLE);
 						Hand_Controll_2--;
+						return;
 					}
 				}
-				if(Motor_2_Steps_togo!=0) //по шапгам с компа
+				else if(Motor_2_Steps_togo!=0) //по шапгам с компа
 				{
+					
 					if(Motor_2_Steps_togo>0)
 					{
-							if(Motor_2_Steps_togo<5000) //маленькое расстояние 
+							if(Motor_2_Steps_togo<1500) //маленькое расстояние 
 							{
-								multiply=15;
+								multiply=5;
 							}
 							if(Motor_step(MOTOR_2,Motor_2_Steps_togo,1,multiply))
 							{
@@ -956,40 +982,42 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 								float abs_tmp = tmp_cmd_stp - line_mesure;
 								if(fabs(abs_tmp)>2) //прошли по шагам остновное начинаем подъежать
 								{
-									multiply*=5;
-									if(tmp_cmd_stp > line_mesure)
-										{
-											Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
-											
-										}
-										else
-										{
-											Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
-										}
+									
+									first_time_step_2 = 1;
+									MOTOR_2_STEP_ERROR = 0;
+									multiply+=1;
+
+									Motor_2_Steps_togo = (abs_tmp*line_to_step_k)/2;
+
+										
 								}
+								
 							}
 					}
 					else
 					{
+						if(Motor_2_Steps_togo>-1500) //маленькое расстояние 
+							{
+								multiply=5;
+							}
 							if(Motor_step(MOTOR_2,(-Motor_2_Steps_togo),-1,multiply))
 							{
 								POSITION_READY (MOVE_COMPLEATE,MOTOR_2);
 								Motor_2_Steps_togo=0;
-								float abs_tmp = tmp_cmd_stp - line_mesure;
-								if(fabs(abs_tmp)>2)
-								{
-									multiply*=5;
-									if(tmp_cmd_stp > line_mesure)
-										{
-											Motor_2_Steps_togo = tmp_cmd_stp*line_to_step_k;
-											
-										}
-										else
-										{
-											Motor_2_Steps_togo = -(tmp_cmd_stp*line_to_step_k);
-										}
-								}
+
+								
 							}
+					}
+				}
+				else if(Motor_2_Steps_togo==0)
+				{
+					MOTOR_Enable(MOTOR_2, DISABLE);
+					
+					if(flag_position)
+					{
+						check_pos=1;
+						
+						flag_position=0;
 					}
 				}
 		}

@@ -92,7 +92,7 @@ extern _Bool MOTOR_2_STEP_ERROR;
 
 extern uint8_t CAN_RECIEVE_FLAG;
 
-int Motor_2_Steps_togo;
+
 extern uint8_t Hand_Controll_2;
 /* USER CODE BEGIN EV */
 
@@ -311,10 +311,7 @@ void TIM8_UP_TIM13_IRQHandler(void)
 	{
 		if(Motor_Get_Dir(MOTOR_2)==RIGHT)
 		{
-			if(!Hand_Controll_2)
-			{
-				Motor_2_Steps_togo--;
-			}
+			
 			if(MOTOR_2_Step>0)
 			{
 				MOTOR_2_Step--;
@@ -326,10 +323,7 @@ void TIM8_UP_TIM13_IRQHandler(void)
 		}
 		else
 		{
-			if(!Hand_Controll_2)
-			{
-				Motor_2_Steps_togo++;
-			}
+			
 			MOTOR_2_Step++;
 		}
 	}
